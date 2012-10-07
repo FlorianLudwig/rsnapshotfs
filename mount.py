@@ -5,7 +5,7 @@
 
 import os
 from errno import *
-from stat import *
+from stat import S_ISDIR, S_IFDIR
 import time
 import re
 import thread
@@ -34,7 +34,7 @@ def flag2mode(flags): # from FUSE example
 
 class RSnapshotFS(fuse.Fuse):
     def __init__(self, *args, **kw):
-        super(BackupFS, self).__init__(*args, **kw)
+        super(RSnapshotFS, self).__init__(*args, **kw)
         thread.start_new_thread(self._update_backup_list, ())
 
     def _update_backup_list(self):
@@ -207,7 +207,7 @@ class RSnapshotFS(fuse.Fuse):
 
 
 def main():
-    usage = """Backup FS, view rsnapshot more comfortable
+    usage = """RSnapshot FS, view rsnapshot more comfortable
 
 """ + fuse.Fuse.fusage
 
