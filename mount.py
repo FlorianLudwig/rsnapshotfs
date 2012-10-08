@@ -10,7 +10,12 @@ import time
 import re
 import thread
 from posix import stat_result
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # for compatibility with python < 2.7
+    # http://pypi.python.org/pypi/ordereddict
+    from ordereddict import OrderedDict
 
 import fuse
 
@@ -155,10 +160,10 @@ class RSnapshotFS(fuse.Fuse):
         if not self.root.endswith('/'):
             self.root += '/'
         self._refresh_backup_list()
-        self.BackUpFile.fs = self
+        self.RSnapshotFile.fs = self
 
     def main(self, *a, **kw):
-        self.file_class = self.BackUpFile
+        self.file_class = self.RSnapshotFile
         return super(RSnapshotFS, self).main(*a, **kw)
 
     class RSnapshotFile(object):
