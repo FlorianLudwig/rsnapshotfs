@@ -46,7 +46,8 @@ class RSnapshotFS(fuse.Fuse):
         self.backups = OrderedDict()
         self.backup_times = {}
         backups = [self.root + path
-                    for path in os.listdir(self.root)]
+                    for path in os.listdir(self.root)
+                    if os.path.isdir(self.root + path)]
         backups.sort(key=lambda path: os.lstat(path).st_mtime)
         print 'backup count', len(backups)
         for backup in backups:
