@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 #    Copyright (C) 2012  Florian Ludwig  <f.ludwig@greyrook.com>
 
 
@@ -10,13 +9,8 @@ import time
 import re
 import thread
 from posix import stat_result
-try:
-    from collections import OrderedDict
-except ImportError:
-    # for compatibility with python < 2.7
-    # http://pypi.python.org/pypi/ordereddict
-    from ordereddict import OrderedDict
 
+from collections import OrderedDict
 import fuse
 
 
@@ -54,6 +48,7 @@ class RSnapshotFS(fuse.Fuse):
         backups = [self.root + path
                     for path in os.listdir(self.root)]
         backups.sort(key=lambda path: os.lstat(path).st_mtime)
+        print 'backup count', len(backups)
         for backup in backups:
             self.backups[backup] = time.strftime('%Y-%m-%d-%H-%M',
                                        time.localtime(os.lstat(backup).st_mtime))
@@ -73,9 +68,15 @@ class RSnapshotFS(fuse.Fuse):
                     f_stat[0] = mode & 0b111111111111 | S_IFDIR
                     f_stat = stat_result(f_stat)
                     assert S_ISDIR(f_stat.st_mode)
+                    parent = os.lstat(os.path.dirname(fpath))
+                    # print 'done getattr - fake dir'
+                    # print 'fstat:  ', f_stat
+                    # print 'parent: ', parent
+                    return parent  # XXX workaround
                     return f_stat
         # either the path does not exist or it actually is a file
         real_path = self._get_real_path(path)
+        # print 'done getattr ', real_path
         if real_path:
             return os.lstat(real_path)
 
@@ -89,11 +90,12 @@ class RSnapshotFS(fuse.Fuse):
                 real_path = self.backup_times[backup_time] + path[:pos]
                 return real_path
 
-    def readlink(self, path): # TODO
+    def readlink(self, path):  # TODO
         raise NotImplementedError()
         return os.readlink(self.root + path)
 
     def readdir(self, path, offset):
+        # print 'readdir', path, offset
         assert offset == 0
         fnames = set()
         fname = path[path.rfind('/')+1:]
@@ -223,7 +225,11 @@ def main():
     server.parser.add_option(mountopt="root", metavar="PATH",
                              help="path to rsnapshort folder")
     server.parse(values=server, errex=1)
-    server.main()
+
+    if not os.path.isdir(server.root):
+        print 'backup dir does not exist!'
+    else:
+        server.main()
 
 
 if __name__ == '__main__':
